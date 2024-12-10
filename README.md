@@ -1,4 +1,4 @@
-# MidiHero
+# MIDIHero
 
 Simple JUCE project plugin which reads inputs from a Guitar Hero controller using HIDAPI and translates to MIDI output.
 
