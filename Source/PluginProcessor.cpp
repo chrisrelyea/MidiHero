@@ -8,7 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include <hidapi/hidapi.h>
+#include "hidapi/hidapi.h"
 #include <iostream>
 #include <bitset>
 
@@ -177,38 +177,61 @@ void GuitarControllerAudioProcessor::processBlock(juce::AudioBuffer<float>& buff
     // Clear unused output channels
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, numSamples);
+    
+    // Flush pending midi message (off events for changed notes)
+    midiMessages.addEvents(pendingMidiMessages, 0, buffer.getNumSamples(), 0);
+    pendingMidiMessages.clear();
+    
+    
+    double scaleNotes[5] = {67, 65, 66, 68, 69}; // YGRBO ordering
+    int strumMod = 0;
 
-    // Process HID data
+    switch (strumRaw)
+    {
+        case 15: strumMod = 0; break;
+        case 4:  strumMod = 5; break;
+        case 0:  strumMod = -5; break;
+    }
+
+    
+
+    // Process HID button data
     if (newHIDDataAvailable.load())
     {
         std::lock_guard<std::mutex> lock(mutex); // Access shared data
         
-        
-                
-        for (int i = 0; i < 5; ++i) {
-                if (currentButtonStates[i] != newButtonStates[i]) {
-                    if (newButtonStates[i]) {  // If button is pressed
-                        midiMessages.addEvent(juce::MidiMessage::noteOn(1, midiNotes[i], 1.0f), 0);
-                    } else {  // If button is released
-                        midiMessages.addEvent(juce::MidiMessage::noteOff(1, midiNotes[i]), 0);
-                    }
-                }
+        for (int i = 0; i < 5; ++i)
+        {
+            double noteToPlay = scaleMode ? (scaleNotes[i] + strumMod) : midiNotes[i];
+
+
+            if (noteCurrentlyOn[i] != -1 && noteCurrentlyOn[i] != noteToPlay)
+            {
+                midiMessages.addEvent(juce::MidiMessage::noteOff(1, noteCurrentlyOn[i]), 0);
+                noteCurrentlyOn[i] = -1; // clear
             }
+
+            if (newButtonStates[i] && noteCurrentlyOn[i] == -1)
+            {
+                midiMessages.addEvent(juce::MidiMessage::noteOn(1, noteToPlay, 1.0f), 0);
+                noteCurrentlyOn[i] = noteToPlay;
+            }
+            else if (!newButtonStates[i] && noteCurrentlyOn[i] != -1)
+            {
+                midiMessages.addEvent(juce::MidiMessage::noteOff(1, noteCurrentlyOn[i]), 0);
+                noteCurrentlyOn[i] = -1;
+            }
+
+        }
+
         
         currentButtonStates = newButtonStates;
         
+        int whammyToMidi = juce::jlimit(0, 16383, (255 - whammyRaw) * 64);
+        DBG(whammyToMidi);
         
-//        if (currentStatus == 2) // Button pressed
-//        {
-//            midiMessages.addEvent(juce::MidiMessage::noteOn(1, 62, 1.0f), 0);
-//            DBG("Sending note on");
-//        }
-//        else // Button released
-//        {
-//            midiMessages.addEvent(juce::MidiMessage::noteOff(1, 62), 0);
-//            DBG("Sending note off");
-//        }
-
+        midiMessages.addEvent(juce::MidiMessage::pitchWheel(1, whammyToMidi), 0);
+        
         newHIDDataAvailable.store(false); // Reset flag
     }
 
@@ -263,23 +286,57 @@ void GuitarControllerAudioProcessor::hidPollingThread()
         if (hidDevice)
         {
             unsigned char localBuf[65];
-            int res = hid_read(hidDevice, localBuf, sizeof(localBuf));
+            // Use a short timeout (e.g. 1 ms) so we don't block
+            int res = hid_read_timeout(hidDevice, localBuf, sizeof(localBuf), 1);
+
             if (res > 0)
             {
                 std::lock_guard<std::mutex> lock(mutex); // Lock shared data
-                std::copy(std::begin(localBuf), std::end(localBuf), std::begin(buf)); // Copy data
+                std::copy(std::begin(localBuf), std::end(localBuf), std::begin(buf));
+                
+                
+                // PITCH BEND
+                if (whammyRaw != buf[5]) {
+                    whammyRaw = buf[5]; // 0–255
+                    DBG("whammy raw: " + juce::String(whammyRaw));
+                    newHIDDataAvailable.store(true);
+
+                    
+                }
+                
+                
+                // Strum Bar
+                if (strumRaw != buf[2]) {
+                    strumRaw = buf[2];
+                    DBG("strum raw: " + juce::String(strumRaw));
+                    newHIDDataAvailable.store(true);
+
+                    
+                }
+                
+//                for (int i = 0; i < 5; i++) {
+//                    DBG(juce::String(i) + ": " + juce::String(buf[i]));
+//                }
+                
+
+
+                
                 if (currentStatus != buf[0]) // Button state has changed
                 {
                     currentStatus = buf[0];
-                    
                     newButtonStates = currentStatus;
-                    
-                    DBG(newButtonStates.to_string());
+                    //DBG(newButtonStates.to_string());
                     newHIDDataAvailable.store(true);
                 }
             }
+            else if (res < 0)
+            {
+                DBG("hid_read_timeout error");
+                break; // exit thread if device error
+            }
+
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Polling interval
+        //std::this_thread::sleep_for(std::chrono::milliseconds()); // Polling interval
     }
 }
 
@@ -288,7 +345,22 @@ void GuitarControllerAudioProcessor::updateMidiNote(int buttonIndex, double newM
 {
     if (buttonIndex >= 0 && buttonIndex < 5)
     {
+        if (currentButtonStates[buttonIndex])
+                {
+                    auto noteOff = juce::MidiMessage::noteOff(1, midiNotes[buttonIndex]);
+                    pendingMidiMessages.addEvent(noteOff, 0);
+                }
+
+        
         midiNotes[buttonIndex] = newMidiNote;
+        
+        if (currentButtonStates[buttonIndex]) {
+            auto noteOn = juce::MidiMessage::noteOn(1, midiNotes[buttonIndex], 1.0f);
+            pendingMidiMessages.addEvent(noteOn, 0);
+        }
+
+
+        
     }
 }
 

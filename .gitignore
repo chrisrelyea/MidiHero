@@ -1,0 +1,9 @@
+# JUCE Build artifacts
+Builds/**/build/
+Builds/**/DerivedData/
+*.vst3
+*.component
+*.app
+*.dll
+*.exe
+*.pdb

@@ -5,6 +5,14 @@
               pluginCharacteristicsValue="pluginProducesMidiOut">
   <MAINGROUP id="F3DmC9" name="guitarController">
     <GROUP id="{8445E71D-E316-D689-B713-6D655E92D439}" name="Source">
+      <GROUP id="{FA3EEE5E-4B81-12A0-DE4F-594DEC0FC04B}" name="mac"/>
+      <GROUP id="{3FF429F2-3C9E-F8C8-2312-2F8D8901980B}" name="hidapi">
+        <FILE id="ulr5KP" name="hidapi_darwin.h" compile="0" resource="0" file="Source/hidapi/hidapi_darwin.h"/>
+        <GROUP id="{660AABC5-E72C-8E26-D833-A3AD00637B05}" name="mac">
+          <FILE id="bHjjBG" name="hid.c" compile="1" resource="0" file="Source/hidapi/mac/hid.c"/>
+        </GROUP>
+        <FILE id="hcDPPR" name="hidapi.h" compile="0" resource="0" file="Source/hidapi/hidapi.h"/>
+      </GROUP>
       <FILE id="ROjLOI" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="QBHmBb" name="PluginProcessor.h" compile="0" resource="0"
@@ -31,8 +39,8 @@
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-framework IOKit -framework CoreFoundation&#10;-L/usr/local/Cellar/hidapi/0.14.0/lib -l hidapi"
-               extraCompilerFlags="-I/usr/local/Cellar/hidapi/0.14.0/include">
+    <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-framework IOKit -framework CoreFoundation&#10;"
+               frameworkSearchPaths="$(PROJECT_DIR)/Source&#10;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="guitarController"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="guitarController"/>

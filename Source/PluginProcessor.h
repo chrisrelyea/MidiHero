@@ -9,7 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <hidapi/hidapi.h>
+#include "hidapi/hidapi.h"
 #include <iostream>
 #include <bitset>
 #include <queue>
@@ -75,7 +75,21 @@ public:
         // Shared state
         std::mutex mutex;
         int currentStatus = 0;
+    
+    
+        bool scaleMode = true;
+    
         
+        // Whammy
+        
+        int whammyRaw = 128;
+    
+        // Strum (15 none, 0 up strum low notes, 4 down strum high notes)
+        int strumRaw = 15;
+        
+    
+        double noteCurrentlyOn[5] = { -1, -1, -1, -1, -1 }; // -1 = no note
+
     
         // array of booleans corresponding to GH controller buttons, starting at G
         // G R Y B O
@@ -89,9 +103,16 @@ public:
         double midiNotes[5] = {62, 60, 61, 63, 64};    // YGRBO ordering
 
         std::atomic<bool> newHIDDataAvailable{false};
+    
+    
+        juce::MidiBuffer pendingMidiMessages;
+
 
         // Methods
         void hidPollingThread(); // Thread function for HID polling
+    
+    
+        
 
     
 };
