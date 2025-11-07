@@ -10,11 +10,14 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "ScaleModePage.h"
+#include "NoteModePage.h"
+
 
 //==============================================================================
 /**
 */
-class GuitarControllerAudioProcessorEditor  : public juce::AudioProcessorEditor, public juce::Slider::Listener
+class GuitarControllerAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     GuitarControllerAudioProcessorEditor (GuitarControllerAudioProcessor&);
@@ -29,8 +32,8 @@ private:
     // access the processor object that created it.
     GuitarControllerAudioProcessor& audioProcessor;
     
-    juce::Slider gSlider, rSlider, ySlider, bSlider, oSlider;
-    juce::Label gLabel, rLabel, yLabel, bLabel, oLabel;
-    void sliderValueChanged(juce::Slider* slider);
+    NoteModePage noteModePage;
+    ScaleModePage scaleModePage;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GuitarControllerAudioProcessorEditor)
 };

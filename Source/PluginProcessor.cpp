@@ -301,17 +301,13 @@ void GuitarControllerAudioProcessor::hidPollingThread()
                     DBG("whammy raw: " + juce::String(whammyRaw));
                     newHIDDataAvailable.store(true);
 
-                    
                 }
-                
                 
                 // Strum Bar
                 if (strumRaw != buf[2]) {
                     strumRaw = buf[2];
                     DBG("strum raw: " + juce::String(strumRaw));
                     newHIDDataAvailable.store(true);
-
-                    
                 }
                 
 //                for (int i = 0; i < 5; i++) {
@@ -319,8 +315,6 @@ void GuitarControllerAudioProcessor::hidPollingThread()
 //                }
                 
 
-
-                
                 if (currentStatus != buf[0]) // Button state has changed
                 {
                     currentStatus = buf[0];

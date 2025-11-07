@@ -5,6 +5,12 @@
               pluginCharacteristicsValue="pluginProducesMidiOut">
   <MAINGROUP id="F3DmC9" name="guitarController">
     <GROUP id="{8445E71D-E316-D689-B713-6D655E92D439}" name="Source">
+      <FILE id="t43IyU" name="NoteModePage.cpp" compile="1" resource="0"
+            file="Source/NoteModePage.cpp"/>
+      <FILE id="xOCwJe" name="NoteModePage.h" compile="0" resource="0" file="Source/NoteModePage.h"/>
+      <FILE id="YXUuIm" name="ScaleModePage.cpp" compile="1" resource="0"
+            file="Source/ScaleModePage.cpp"/>
+      <FILE id="SqQpMF" name="ScaleModePage.h" compile="0" resource="0" file="Source/ScaleModePage.h"/>
       <GROUP id="{FA3EEE5E-4B81-12A0-DE4F-594DEC0FC04B}" name="mac"/>
       <GROUP id="{3FF429F2-3C9E-F8C8-2312-2F8D8901980B}" name="hidapi">
         <FILE id="ulr5KP" name="hidapi_darwin.h" compile="0" resource="0" file="Source/hidapi/hidapi_darwin.h"/>
